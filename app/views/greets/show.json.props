@@ -1,0 +1,5 @@
+json.body do
+  json.greet "Hello, World!"
+end
+
+json.footer "Making Rails developers genuinely happy since 2020"

@@ -1,0 +1,12 @@
+json.project do
+  json.id @project.id
+  json.name @project.name
+  json.description @project.description
+  json.slug @project.slug
+  json.created_at @project.created_at
+  json.updated_at @project.updated_at
+  json.tasks @project.tasks
+  json.edit_path edit_project_path(@project)
+  json.delete_path project_path(@project)
+  json.back_path projects_path
+end

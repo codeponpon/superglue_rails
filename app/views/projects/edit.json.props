@@ -1,0 +1,25 @@
+json.edit_project_form do
+  form_props(model: @project) do |f|
+    f.hidden_field :id
+    f.text_field :name
+    f.text_area :description
+    f.fields_for :tasks do |task_form|
+      task_form.hidden_field :id
+      task_form.text_field :title
+      task_form.number_field :allotted_time
+    end
+    f.submit
+  end
+
+  json.errors @project.errors.to_hash(true)
+end
+
+# Add tasks data with IDs for the frontend
+json.tasks @project.tasks
+
+json.project do
+  json.id @project.id
+  json.name @project.name
+  json.description @project.description
+  json.slug @project.slug
+end

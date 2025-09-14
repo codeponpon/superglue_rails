@@ -1,0 +1,12 @@
+json.id current_user.try(:id)
+json.is_authenticated current_user.present?
+json.email_address current_user.try(:email_address)
+json.username current_user.try(:username)
+json.slug current_user.try(:slug)
+
+json.sign_out_form do
+  form_props(url: session_path, method: :delete) do |f|
+    f.hidden_field :authenticity_token
+    f.submit
+  end
+end
