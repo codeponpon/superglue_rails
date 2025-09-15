@@ -15,7 +15,16 @@ json.edit_project_form do
 end
 
 # Add tasks data with IDs for the frontend
-json.tasks @project.tasks
+json.tasks do
+  json.array! @project.tasks.ordered do |task|
+    json.id task.id
+    json.title task.title
+    json.allotted_time task.allotted_time
+    json.position task.position
+    json.created_at task.created_at
+    json.updated_at task.updated_at
+  end
+end
 
 json.project do
   json.id @project.id
@@ -23,3 +32,5 @@ json.project do
   json.description @project.description
   json.slug @project.slug
 end
+
+json.sortTasksPath sort_tasks_project_path(@project)

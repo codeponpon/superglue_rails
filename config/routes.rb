@@ -19,5 +19,8 @@ Rails.application.routes.draw do
     collection do
       get :add_task
     end
+    member do
+      patch :sort_tasks
+    end
   end
 end

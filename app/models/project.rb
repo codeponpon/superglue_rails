@@ -4,7 +4,7 @@ class Project < ApplicationRecord
 
   validates :name, presence: true
 
-  has_many :tasks, dependent: :destroy
+  has_many :tasks, -> { ordered }, dependent: :destroy
 
   scope :recent, -> { order(created_at: :desc) }
 
