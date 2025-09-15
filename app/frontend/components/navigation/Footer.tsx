@@ -191,19 +191,19 @@ export default function Footer() {
               <div className="flex space-x-6">
                 <a
                   href="#"
-                  className="text-slate-400 hover:text-white transition-colors duration-200 text-sm"
+                  className="text-slate-400 hover:text-slate-900 transition-colors duration-200 text-sm"
                 >
                   Privacy Policy
                 </a>
                 <a
                   href="#"
-                  className="text-slate-400 hover:text-white transition-colors duration-200 text-sm"
+                  className="text-slate-400 hover:text-slate-900 transition-colors duration-200 text-sm"
                 >
                   Terms of Service
                 </a>
                 <a
                   href="#"
-                  className="text-slate-400 hover:text-white transition-colors duration-200 text-sm"
+                  className="text-slate-400 hover:text-slate-900 transition-colors duration-200 text-sm"
                 >
                   Cookie Policy
                 </a>

@@ -1,6 +1,6 @@
 class ProjectsController < ApplicationController
-  allow_unauthenticated_access only: [ :new, :create, :add_task, :show, :edit, :update ]
-  before_action :set_project, only: [ :show, :edit, :update, :destroy ]
+  allow_unauthenticated_access only: [ :new, :create, :add_task, :show, :edit, :update, :sort_tasks ]
+  before_action :set_project, only: [ :show, :edit, :update, :destroy, :sort_tasks ]
 
   def index
     @pagy, @projects = pagy(Project.recent, limit: 6)
@@ -69,13 +69,28 @@ class ProjectsController < ApplicationController
     }
   end
 
+  def sort_tasks
+    task_ids = params[:task_ids]
+
+    if task_ids.present?
+      task_ids.each_with_index do |task_id, index|
+        task = @project.tasks.find(task_id)
+        task.update_column(:position, index)
+      end
+
+      render json: { status: "success", message: "Tasks reordered successfully" }
+    else
+      render json: { status: "error", message: "No task IDs provided" }, status: :bad_request
+    end
+  end
+
   private
 
   def set_project
-    @project = Project.find(params[:id])
+    @project = Project.friendly.find(params[:id])
   end
 
   def project_params
-    params.expect(project: [ :name, :description, tasks_attributes: [ [ :id, :title, :allotted_time, :_destroy ] ] ])
+    params.expect(project: [ :name, :description, tasks_attributes: [ [ :id, :title, :allotted_time, :position, :_destroy ] ] ])
   end
 end

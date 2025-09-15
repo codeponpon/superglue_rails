@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_14_115148) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_15_044036) do
   create_table "friendly_id_slugs", force: :cascade do |t|
     t.string "slug", null: false
     t.integer "sluggable_id", null: false
@@ -47,6 +47,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_14_115148) do
     t.integer "allotted_time"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "position", default: 0
+    t.index ["project_id", "position"], name: "index_tasks_on_project_id_and_position"
     t.index ["project_id"], name: "index_tasks_on_project_id"
   end
 

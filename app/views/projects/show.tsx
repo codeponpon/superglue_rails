@@ -7,6 +7,7 @@ interface Task {
   id: number;
   title: string;
   allotted_time: number;
+  position: number;
   created_at: string;
   updated_at: string;
 }
