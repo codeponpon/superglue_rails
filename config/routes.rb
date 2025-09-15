@@ -1,6 +1,7 @@
 Rails.application.routes.draw do
   resource :session
   resources :passwords, param: :token
+  resources :users
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
@@ -14,7 +15,11 @@ Rails.application.routes.draw do
   root "pages#index"
 
   resource :greets, only: [ :show ]
-  resources :dashboard, only: [ :index ]
+  resources :dashboard, only: [ :index ] do
+    collection do
+      get :settings
+    end
+  end
   resources :projects do
     collection do
       get :add_task

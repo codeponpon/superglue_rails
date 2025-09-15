@@ -1,0 +1,12 @@
+json.users do
+  json.array! @users do |user|
+    json.id user.id
+    json.email_address user.email_address
+    json.created_at user.created_at
+    json.updated_at user.updated_at
+    json.edit_path edit_user_path(user)
+    json.delete_path user_path(user)
+  end
+end
+
+json.new_user_path new_user_path

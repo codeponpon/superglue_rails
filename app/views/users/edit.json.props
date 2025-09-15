@@ -1,0 +1,19 @@
+json.edit_user_form do
+  form_props(model: @user) do |f|
+    f.hidden_field :id
+    f.text_field :email_address
+    f.password_field :password, placeholder: "Leave blank to keep current password"
+    f.password_field :password_confirmation, placeholder: "Leave blank to keep current password"
+    f.submit
+  end
+  json.errors @user.errors.to_hash(true)
+end
+
+json.user do
+  json.id @user.id
+  json.email_address @user.email_address
+  json.created_at @user.created_at
+  json.updated_at @user.updated_at
+end
+
+json.back_path users_path
