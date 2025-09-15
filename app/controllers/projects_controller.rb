@@ -21,21 +21,63 @@ class ProjectsController < ApplicationController
     @project = Project.new(project_params)
 
     if @project.save
-      redirect_to projects_path, notice: "Project created successfully"
+      respond_to do |format|
+        format.html { redirect_to projects_path, notice: "Project created successfully" }
+        format.json do
+          # For data-sg-visit, redirect to projects index
+          response.set_header("content-location", project_path(@project))
+          flash.now[:notice] = "Project created successfully"
+          # Set up variables needed for index template
+          @pagy, @projects = pagy(Project.recent, limit: 6)
+          @projects = @projects.compact
+          @projects = [] if @projects.nil?
+          render :show
+        end
+      end
     else
-      response.set_header("content-location", new_project_path)
-      flash.now[:alert] = "There was an error creating your project"
-      render :new
+      respond_to do |format|
+        format.html do
+          response.set_header("content-location", new_project_path)
+          flash.now[:alert] = "There was an error creating your project"
+          render :new
+        end
+        format.json do
+          # For data-sg-remote, stay on new project page with errors
+          response.set_header("content-location", new_project_path)
+          flash.now[:alert] = "There was an error creating your project"
+          # Ensure @project has tasks for the form
+          @project.tasks.build if @project.tasks.empty?
+          render :new
+        end
+      end
     end
   end
 
   def update
     if @project.update(project_params)
-      redirect_to @project, notice: "Project updated successfully"
+      respond_to do |format|
+        format.html { redirect_to @project, notice: "Project updated successfully" }
+        format.json do
+          # For data-sg-remote, stay on edit page with success message
+          response.set_header("content-location", edit_project_path(@project))
+          flash.now[:notice] = "Project updated successfully"
+          render :edit
+        end
+      end
     else
-      response.set_header("content-location", edit_project_path(@project))
-      flash.now[:alert] = "There was an error updating your project"
-      render :edit
+      respond_to do |format|
+        format.html do
+          response.set_header("content-location", edit_project_path(@project))
+          flash.now[:alert] = "There was an error updating your project"
+          render :edit
+        end
+        format.json do
+          # For data-sg-remote, render the edit page with errors
+          response.set_header("content-location", edit_project_path(@project))
+          flash.now[:alert] = "There was an error updating your project"
+          render :edit
+        end
+      end
     end
   end
 
@@ -49,24 +91,35 @@ class ProjectsController < ApplicationController
   end
 
   def add_task
-    @project = Project.new
-    @project.tasks.build
-    render json: {
-      task: {
-        title: {
-          name: "project[tasks_attributes][#{Time.current.to_i}][title]",
-          value: "",
-          type: "text",
-          id: "project_tasks_attributes_#{Time.current.to_i}_title"
-        },
-        allottedTime: {
-          name: "project[tasks_attributes][#{Time.current.to_i}][allotted_time]",
-          value: "",
-          type: "number",
-          id: "project_tasks_attributes_#{Time.current.to_i}_allotted_time"
+    begin
+      @project = Project.new
+      @project.tasks.build
+
+      timestamp = Time.current.to_i
+      render json: {
+        status: "success",
+        task: {
+          title: {
+            name: "project[tasks_attributes][#{timestamp}][title]",
+            value: "",
+            type: "text",
+            id: "project_tasks_attributes_#{timestamp}_title"
+          },
+          allottedTime: {
+            name: "project[tasks_attributes][#{timestamp}][allotted_time]",
+            value: "",
+            type: "number",
+            id: "project_tasks_attributes_#{timestamp}_allotted_time"
+          }
         }
       }
-    }
+    rescue => e
+      render json: {
+        status: "error",
+        message: "Failed to add task",
+        error: e.message
+      }, status: :internal_server_error
+    end
   end
 
   def sort_tasks

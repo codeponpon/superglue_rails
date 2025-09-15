@@ -1,5 +1,5 @@
 json.projects do
-  json.array! @projects do |project|
+  json.array! @projects.compact do |project|
     json.id project.id
     json.name project.name
     json.description project.description
@@ -10,8 +10,8 @@ json.projects do
 end
 
 json.pagination do
-  json.prevPage pagy_prev_url(@pagy)
-  json.nextPage pagy_next_url(@pagy)
+  json.prevPage @pagy ? pagy_prev_url(@pagy) : nil
+  json.nextPage @pagy ? pagy_next_url(@pagy) : nil
 end
 
 json.newProjectPath new_project_path

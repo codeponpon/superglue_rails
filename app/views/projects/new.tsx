@@ -126,6 +126,7 @@ export default function ProjectsNew() {
           extras={extras}
           validationErrors={errors}
           className="flex flex-col"
+          data-sg-visit
         >
           <div className="flex flex-col space-y-2">
             <FieldBase

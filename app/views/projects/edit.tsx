@@ -8,6 +8,7 @@ import {
   SubmitButton,
 } from "../../frontend/components/Inputs";
 import { Plus, Trash2, ArrowLeft, RotateCcw, GripVertical } from "lucide-react";
+import Flash from "@components/Flash";
 
 interface FormData {
   action: string;
@@ -619,6 +620,7 @@ export default function ProjectsEdit() {
           <a
             href={`/projects/${project.id}`}
             className="text-gray-600 hover:text-gray-800 flex items-center space-x-2"
+            data-sg-visit
           >
             <ArrowLeft className="w-5 h-5" />
             <span>Back to Project</span>
@@ -630,6 +632,7 @@ export default function ProjectsEdit() {
           extras={extras}
           validationErrors={errors}
           className="flex flex-col"
+          data-sg-remote
         >
           <div className="flex flex-col space-y-2">
             <FieldBase
