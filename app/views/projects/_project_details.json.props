@@ -1,0 +1,20 @@
+json.id project.id
+json.name project.name
+json.description project.description
+json.slug project.slug
+json.created_at project.created_at
+json.updated_at project.updated_at
+json.timestamp Time.current.to_i
+json.tasks do
+  json.array! project.tasks.ordered do |task|
+    json.id task.id
+    json.title task.title
+    json.allotted_time task.allotted_time
+    json.position task.position
+    json.created_at task.created_at
+    json.updated_at task.updated_at
+  end
+end
+json.edit_path edit_project_path(project)
+json.delete_path project_path(project)
+json.back_path projects_path

@@ -1,4 +1,5 @@
 class Project < ApplicationRecord
+  include Superglue::Broadcastable
   extend FriendlyId
   friendly_id :name, use: :slugged
 

@@ -21,19 +21,30 @@ class ProjectsController < ApplicationController
     @project = Project.new(project_params)
 
     if @project.save
+      @project.broadcast_append_later_to(
+        "projects",
+        save_target: "project_#{@project.id}",
+        target: "projects",
+        partial: "projects/project"
+      )
       respond_to do |format|
-        format.html { redirect_to projects_path, notice: "Project created successfully" }
-        format.json do
-          # For data-sg-visit, redirect to projects index
-          response.set_header("content-location", project_path(@project))
-          flash.now[:notice] = "Project created successfully"
-          # Set up variables needed for index template
-          @pagy, @projects = pagy(Project.recent, limit: 6)
-          @projects = @projects.compact
-          @projects = [] if @projects.nil?
-          render :show
-        end
+        flash[:notice] = "Project created successfully"
+        format.html { redirect_to projects_path }
+        format.json { render layout: "stream" }
       end
+      # respond_to do |format|
+      #   format.html { redirect_to projects_path, notice: "Project created successfully" }
+      #   format.json do
+      #     # For data-sg-visit, redirect to projects index
+      #     response.set_header("content-location", project_path(@project))
+      #     flash.now[:notice] = "Project created successfully"
+      #     # Set up variables needed for index template
+      #     @pagy, @projects = pagy(Project.recent, limit: 6)
+      #     @projects = @projects.compact
+      #     @projects = [] if @projects.nil?
+      #     render :show
+      #   end
+      # end
     else
       respond_to do |format|
         format.html do
@@ -54,31 +65,55 @@ class ProjectsController < ApplicationController
   end
 
   def update
-    if @project.update(project_params)
-      respond_to do |format|
-        format.html { redirect_to @project, notice: "Project updated successfully" }
-        format.json do
-          # For data-sg-remote, stay on edit page with success message
-          response.set_header("content-location", edit_project_path(@project))
-          flash.now[:notice] = "Project updated successfully"
-          render :edit
-        end
-      end
-    else
-      respond_to do |format|
-        format.html do
-          response.set_header("content-location", edit_project_path(@project))
-          flash.now[:alert] = "There was an error updating your project"
-          render :edit
-        end
-        format.json do
-          # For data-sg-remote, render the edit page with errors
-          response.set_header("content-location", edit_project_path(@project))
-          flash.now[:alert] = "There was an error updating your project"
-          render :edit
-        end
-      end
+    @project.update!(project_params)
+
+    # Broadcast to projects list
+    @project.broadcast_save_later_to(
+      "projects",
+      target: "project_#{@project.id}",
+      partial: "projects/project"
+    )
+
+    # Broadcast to project show page
+    Rails.logger.info "Broadcasting to project_#{@project.id} with target project_details_#{@project.id}"
+    Rails.logger.info "Project name: #{@project.name}, description: #{@project.description}"
+    @project.broadcast_save_later_to(
+      "project_#{@project.id}",
+      target: "project_details_#{@project.id}",
+      partial: "projects/project_details",
+      model: @project
+    )
+
+    respond_to do |format|
+      format.html { redirect_to @project }
+      format.json { render layout: "stream" }
     end
+
+    # if @project.update(project_params)
+    #   respond_to do |format|
+    #     format.html { redirect_to @project, notice: "Project updated successfully" }
+    #     format.json do
+    #       # For data-sg-remote, stay on edit page with success message
+    #       response.set_header("content-location", edit_project_path(@project))
+    #       flash.now[:notice] = "Project updated successfully"
+    #       render :edit
+    #     end
+    #   end
+    # else
+    #   respond_to do |format|
+    #     format.html do
+    #       response.set_header("content-location", edit_project_path(@project))
+    #       flash.now[:alert] = "There was an error updating your project"
+    #       render :edit
+    #     end
+    #     format.json do
+    #       # For data-sg-remote, render the edit page with errors
+    #       response.set_header("content-location", edit_project_path(@project))
+    #       flash.now[:alert] = "There was an error updating your project"
+    #       render :edit
+    #     end
+    #   end
+    # end
   end
 
   def destroy

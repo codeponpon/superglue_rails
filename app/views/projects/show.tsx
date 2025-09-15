@@ -1,7 +1,8 @@
-import React, { useState } from "react";
-import { useContent } from "@thoughtbot/superglue";
+import React, { useState, useEffect } from "react";
+import { useContent, useStreamSource } from "@thoughtbot/superglue";
 import { AppLayout } from "../../frontend/components/layouts/AppLayout";
 import { ArrowLeft, Edit, Calendar, Clock, Trash2 } from "lucide-react";
+import { ChannelNameWithParams } from "@rails/actioncable";
 
 interface Task {
   id: number;
@@ -20,17 +21,29 @@ interface ProjectShowContent {
     slug: string;
     created_at: string;
     updated_at: string;
+    timestamp?: number;
     edit_path: string;
     delete_path: string;
     back_path: string;
     tasks: Task[];
   };
+  streamFromProject: string | ChannelNameWithParams;
 }
 
 export default function ProjectsShow() {
-  const { project } = useContent<ProjectShowContent>();
+  const { project, streamFromProject } = useContent<ProjectShowContent>();
   const { tasks } = project;
   const [isDeleting, setIsDeleting] = useState(false);
+  const { connected } = useStreamSource(streamFromProject);
+
+  // Set up streaming subscription
+  useEffect(() => {
+    if (streamFromProject) {
+      console.log("Streaming setup:", streamFromProject);
+      // The streaming is handled automatically by Superglue
+      // This effect ensures the component is ready for updates
+    }
+  }, [streamFromProject, connected]);
 
   const handleDelete = async () => {
     if (
@@ -127,9 +140,16 @@ export default function ProjectsShow() {
         {/* Project Details */}
         <div className="bg-white border border-gray-200 rounded-lg p-8 mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-4">
-            {project.name}
+            {project.name} {connected ? "🟢" : "🔴"}
           </h1>
           <p className="text-gray-600 text-lg mb-6">{project.description}</p>
+          <div className="text-sm text-gray-500">
+            Last updated: {new Date().toLocaleTimeString()} (Server:{" "}
+            {project.timestamp
+              ? new Date(project.timestamp * 1000).toLocaleTimeString()
+              : "N/A"}
+            )
+          </div>
 
           <div className="flex items-center space-x-6 text-sm text-gray-500">
             <div className="flex items-center space-x-2">

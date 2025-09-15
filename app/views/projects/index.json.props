@@ -1,12 +1,4 @@
-json.projects do
-  json.array! @projects.compact do |project|
-    json.id project.id
-    json.name project.name
-    json.description project.description
-    json.url project_path(project)
-    json.edit_path edit_project_path(project)
-    json.delete_path project_path(project)
-  end
+json.projects(partial: ["projects", fragment: "projects"]) do
 end
 
 json.pagination do
@@ -19,3 +11,6 @@ json.newProjectPath new_project_path
 json.createProjectModal do
   json.greeting "Hello From the Modal"
 end
+
+# Set up streaming subscription
+json.streamFromProjects stream_from_props("projects")

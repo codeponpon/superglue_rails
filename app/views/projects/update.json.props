@@ -1,0 +1,11 @@
+broadcast_save_props(
+  model: @project,
+  target: "project_#{@project.id}",
+  partial: "projects/project"
+)
+
+broadcast_save_props(
+  model: @project,
+  target: "project_details_#{@project.id}",
+  partial: "projects/project_details"
+)

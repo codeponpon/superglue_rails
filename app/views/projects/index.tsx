@@ -1,9 +1,10 @@
 import React from "react";
-import { useContent } from "@thoughtbot/superglue";
+import { useContent, useStreamSource } from "@thoughtbot/superglue";
 import { AppLayout } from "../../frontend/components/layouts/AppLayout";
 import Link from "../../frontend/components/ui/Link";
 import Pagination from "../../frontend/components/navigation/Pagination";
 import { Trash2, Edit } from "lucide-react";
+import { ChannelNameWithParams } from "@rails/actioncable";
 
 interface Project {
   id: number;
@@ -25,11 +26,13 @@ interface ProjectsPageContent {
   projects: Project[];
   newProjectPath: string;
   pagination: PaginationData;
+  streamFromProjects: string | ChannelNameWithParams;
 }
 
 export default function ProjectsIndex() {
-  const { projects, newProjectPath, pagination } =
+  const { projects, newProjectPath, pagination, streamFromProjects } =
     useContent<ProjectsPageContent>();
+  const { connected } = useStreamSource(streamFromProjects);
 
   const handleDelete = async (projectId: number, projectName: string) => {
     if (
@@ -70,7 +73,9 @@ export default function ProjectsIndex() {
     <AppLayout>
       <div className="px-8 mt-6 mb-20">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold mb-4">Projects</h1>
+          <h1 className="text-2xl font-bold mb-4">
+            Projects {connected ? "🟢" : "🔴"}
+          </h1>
           <a href={newProjectPath} data-sg-visit>
             New Project
           </a>

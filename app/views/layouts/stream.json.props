@@ -6,7 +6,7 @@ json.data do
   end
 end
 json.fragments json.fragments!
-json.assets [ asset_path('application.js') ]
+json.assets [ vite_asset_path('application.tsx') ]
 
 if protect_against_forgery?
   json.csrfToken form_authenticity_token
@@ -16,4 +16,6 @@ json.action "handleStreamResponse"
 
 json.slices do
   json.flash flash.to_h
+  json.user partial: ['users/user', fragment: true] do
+  end
 end

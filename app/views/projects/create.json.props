@@ -1,0 +1,6 @@
+broadcast_append_props(
+  model: @project,
+  save_target: "project_#{@project.id}",
+  target: "projects",
+  partial: "projects/project"
+)

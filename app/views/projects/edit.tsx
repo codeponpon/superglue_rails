@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useContent } from "@thoughtbot/superglue";
 import { AppLayout } from "../../frontend/components/layouts/AppLayout";
 import {
@@ -8,7 +8,6 @@ import {
   SubmitButton,
 } from "../../frontend/components/Inputs";
 import { Plus, Trash2, ArrowLeft, RotateCcw, GripVertical } from "lucide-react";
-import Flash from "@components/Flash";
 
 interface FormData {
   action: string;
@@ -97,14 +96,14 @@ export default function ProjectsEdit() {
   const [isDragging, setIsDragging] = useState(false);
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [dragOverTaskId, setDragOverTaskId] = useState<string | null>(null);
-  const [showDropAtEnd, setShowDropAtEnd] = useState(false);
   const [dropPosition, setDropPosition] = useState<"above" | "below" | null>(
     null
   );
+  const tasksInitialized = useRef(false);
 
   useEffect(() => {
-    // Only initialize tasks if we don't have any tasks yet
-    if (tasks.length === 0) {
+    // Only initialize tasks if we haven't initialized them yet
+    if (!tasksInitialized.current && existingTasks.length > 0) {
       // Map existing tasks with their IDs to the form structure
       // Since tasks are now ordered by position from the server, we need to map them correctly
       const mappedTasks = existingTasks.map((existingTask, index) => {
@@ -149,8 +148,9 @@ export default function ProjectsEdit() {
       setTasks(mappedTasks);
       // Set task counter to continue from existing tasks count
       setTaskCounter(mappedTasks.length);
+      tasksInitialized.current = true;
     }
-  }, [inputs.tasksAttributes, existingTasks, tasks.length]);
+  }, [inputs.tasksAttributes, existingTasks]);
 
   // Cleanup drag image on unmount
   useEffect(() => {
@@ -338,24 +338,6 @@ export default function ProjectsEdit() {
     }, 100);
   };
 
-  const handleDragOver = (e: React.DragEvent, taskId: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    // Only update if it's a different task
-    if (dragOverTaskId !== taskId) {
-      // Calculate drop position based on mouse position
-      const rect = e.currentTarget.getBoundingClientRect();
-      const midpoint = rect.top + rect.height / 2;
-      const mouseY = e.clientY;
-      const position = mouseY < midpoint ? "above" : "below";
-
-      setDragOverTaskId(taskId);
-      setDropPosition(position);
-      setShowDropAtEnd(false);
-    }
-  };
-
   const handleDragLeave = (e: React.DragEvent) => {
     // Only clear if we're actually leaving the task container
     const relatedTarget = e.relatedTarget as Node;
@@ -368,21 +350,16 @@ export default function ProjectsEdit() {
     ) {
       setDragOverTaskId(null);
       setDropPosition(null);
-      setShowDropAtEnd(false);
     }
   };
 
   const handleContainerDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (isDragging && draggedTaskId !== null && !dragOverTaskId) {
-      setShowDropAtEnd(true);
-      setDragOverTaskId(null);
-      setDropPosition(null);
-    }
   };
 
   const handleContainerDragLeave = (e: React.DragEvent) => {
+    // Only clear if we're actually leaving the container
     const relatedTarget = e.relatedTarget as Node;
     const currentTarget = e.currentTarget as Node;
 
@@ -391,7 +368,7 @@ export default function ProjectsEdit() {
       !currentTarget ||
       !currentTarget.contains(relatedTarget)
     ) {
-      setShowDropAtEnd(false);
+      setDragOverTaskId(null);
       setDropPosition(null);
     }
   };
@@ -400,7 +377,7 @@ export default function ProjectsEdit() {
     e.preventDefault();
     const draggedTaskId = e.dataTransfer.getData("text/plain");
 
-    if (draggedTaskId !== dropTaskId) {
+    if (draggedTaskId !== dropTaskId && dropPosition) {
       setTasks((prevTasks) => {
         const newTasks = [...prevTasks];
 
@@ -419,7 +396,7 @@ export default function ProjectsEdit() {
         // Remove the dragged task first
         newTasks.splice(dragIndex, 1);
 
-        // Calculate the correct drop position based on dropPosition state
+        // Calculate the correct drop position
         let adjustedDropIndex = dropIndex;
 
         if (dropPosition === "below") {
@@ -437,68 +414,10 @@ export default function ProjectsEdit() {
         newTasks.splice(adjustedDropIndex, 0, draggedTask);
 
         // Reindex all tasks
-        const reindexedTasks = newTasks.map((task, index) => ({
-          ...task,
-          formIndex: index,
-          position: index, // Update position to match new order
-          title: {
-            ...task.title,
-            name: `project[tasks_attributes][${index}][title]`,
-            id: `project_tasks_attributes_${index}_title`,
-          },
-          allottedTime: {
-            ...task.allottedTime,
-            name: `project[tasks_attributes][${index}][allotted_time]`,
-            id: `project_tasks_attributes_${index}_allotted_time`,
-          },
-        }));
-
-        return reindexedTasks;
-      });
-    }
-
-    setIsDragging(false);
-    setDraggedTaskId(null);
-    setDragOverTaskId(null);
-    setShowDropAtEnd(false);
-    setDropPosition(null);
-  };
-
-  const handleDropAfterTask = (e: React.DragEvent, taskId: string) => {
-    e.preventDefault();
-    const draggedTaskId = e.dataTransfer.getData("text/plain");
-
-    if (draggedTaskId !== taskId) {
-      setTasks((prevTasks) => {
-        const newTasks = [...prevTasks];
-
-        // Find the indices of the dragged and target tasks
-        const dragIndex = newTasks.findIndex(
-          (task) => task.uniqueId === draggedTaskId
-        );
-        const targetIndex = newTasks.findIndex(
-          (task) => task.uniqueId === taskId
-        );
-
-        if (dragIndex === -1 || targetIndex === -1) return prevTasks;
-
-        const draggedTask = newTasks[dragIndex];
-
-        // Remove the dragged task first
-        newTasks.splice(dragIndex, 1);
-
-        // Calculate the correct drop position (after the task)
-        const adjustedDropIndex =
-          dragIndex < targetIndex ? targetIndex : targetIndex + 1;
-
-        // Insert the dragged task at the new position
-        newTasks.splice(adjustedDropIndex, 0, draggedTask);
-
-        // Reindex all tasks
         return newTasks.map((task, index) => ({
           ...task,
           formIndex: index,
-          position: index, // Update position to match new order
+          position: index,
           title: {
             ...task.title,
             name: `project[tasks_attributes][${index}][title]`,
@@ -513,51 +432,10 @@ export default function ProjectsEdit() {
       });
     }
 
+    // Reset drag state
     setIsDragging(false);
     setDraggedTaskId(null);
     setDragOverTaskId(null);
-    setShowDropAtEnd(false);
-    setDropPosition(null);
-  };
-
-  const handleDropAtEnd = (e: React.DragEvent) => {
-    e.preventDefault();
-    const draggedTaskId = e.dataTransfer.getData("text/plain");
-
-    setTasks((prevTasks) => {
-      const newTasks = [...prevTasks];
-      const dragIndex = newTasks.findIndex(
-        (task) => task.uniqueId === draggedTaskId
-      );
-
-      if (dragIndex === -1) return prevTasks;
-
-      const draggedTask = newTasks[dragIndex];
-      newTasks.splice(dragIndex, 1);
-      newTasks.push(draggedTask); // Add to end
-
-      // Reindex all tasks
-      return newTasks.map((task, index) => ({
-        ...task,
-        formIndex: index,
-        position: index, // Update position to match new order
-        title: {
-          ...task.title,
-          name: `project[tasks_attributes][${index}][title]`,
-          id: `project_tasks_attributes_${index}_title`,
-        },
-        allottedTime: {
-          ...task.allottedTime,
-          name: `project[tasks_attributes][${index}][allotted_time]`,
-          id: `project_tasks_attributes_${index}_allotted_time`,
-        },
-      }));
-    });
-
-    setIsDragging(false);
-    setDraggedTaskId(null);
-    setDragOverTaskId(null);
-    setShowDropAtEnd(false);
     setDropPosition(null);
   };
 
@@ -565,7 +443,6 @@ export default function ProjectsEdit() {
     setIsDragging(false);
     setDraggedTaskId(null);
     setDragOverTaskId(null);
-    setShowDropAtEnd(false);
     setDropPosition(null);
   };
 
@@ -598,19 +475,6 @@ export default function ProjectsEdit() {
   };
 
   const sortedTasks = sortTasks(tasks);
-
-  // Drop indicator component
-  const DropIndicator = ({ position }: { position: "above" | "below" }) => (
-    <div
-      className={`h-12 bg-indigo-100 border-2 border-dashed border-indigo-400 rounded-lg mx-2 flex items-center justify-center shadow-md transition-all duration-200 pointer-events-none ${
-        position === "above" ? "-mt-2" : "-mb-2"
-      }`}
-    >
-      <div className="text-indigo-600 text-sm font-medium">
-        Drop here to move {position === "above" ? "above" : "below"}
-      </div>
-    </div>
-  );
 
   return (
     <AppLayout>
@@ -663,54 +527,59 @@ export default function ProjectsEdit() {
                 </div>
               </div>
               <div
-                className="flex flex-col space-y-2 min-h-32"
+                className="flex flex-col space-y-1 min-h-32"
                 onDragOver={handleContainerDragOver}
                 onDragLeave={handleContainerDragLeave}
               >
-                {sortedTasks.map((task: TaskInput, sortedIndex: number) => {
+                {sortedTasks.map((task: TaskInput, index: number) => {
                   const isDragged = draggedTaskId === task.uniqueId;
                   const isDragOver = dragOverTaskId === task.uniqueId;
-                  const isLastTask = sortedIndex === sortedTasks.length - 1;
-                  const shouldShowDropAtEnd =
-                    isLastTask &&
-                    isDragOver &&
-                    draggedTaskId !== null &&
-                    draggedTaskId !== task.uniqueId &&
-                    sortBy === "position" &&
-                    dropPosition === "below";
-
                   const canDrop =
                     isDragging &&
                     draggedTaskId !== null &&
                     draggedTaskId !== task.uniqueId &&
                     sortBy === "position";
-                  const showDropIndicator =
-                    isDragOver &&
-                    canDrop &&
-                    dropPosition &&
-                    !shouldShowDropAtEnd;
 
                   return (
                     <React.Fragment key={task.taskId || task.id}>
-                      {/* Drop indicator above */}
-                      {showDropIndicator && dropPosition === "above" && (
-                        <DropIndicator position="above" />
+                      {/* Drop zone above the task */}
+                      {canDrop && (
+                        <div
+                          className={`h-8 transition-all duration-200 ${
+                            isDragOver && dropPosition === "above"
+                              ? "bg-indigo-100 border-2 border-dashed border-indigo-400 rounded-lg flex items-center justify-center"
+                              : "hover:bg-gray-50 rounded-lg"
+                          }`}
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (canDrop) {
+                              setDragOverTaskId(task.uniqueId);
+                              setDropPosition("above");
+                            }
+                          }}
+                          onDragLeave={handleDragLeave}
+                          onDrop={(e) => handleDrop(e, task.uniqueId)}
+                        >
+                          {isDragOver && dropPosition === "above" && (
+                            <div className="text-indigo-600 text-sm font-medium">
+                              Drop here to move above
+                            </div>
+                          )}
+                        </div>
                       )}
+
+                      {/* The actual task */}
                       <div
                         className={`flex flex-row space-x-1 items-center py-4 px-3 transition-all duration-200 ease-in-out ${
                           task._destroy ? "opacity-50 line-through" : ""
                         } ${
                           isDragged
                             ? "opacity-20 scale-95 bg-gray-50 rounded-lg shadow-inner transform -rotate-1"
-                            : canDrop && isDragOver
-                            ? "bg-indigo-50 border border-indigo-200 rounded-lg"
                             : "hover:bg-gray-50 rounded-lg hover:shadow-sm"
                         }`}
                         draggable={sortBy === "position" && !task._destroy}
                         onDragStart={(e) => handleDragStart(e, task.uniqueId)}
-                        onDragOver={(e) => handleDragOver(e, task.uniqueId)}
-                        onDragLeave={handleDragLeave}
-                        onDrop={(e) => handleDrop(e, task.uniqueId)}
                         onDragEnd={handleDragEnd}
                       >
                         {/* Drag handle - only show when sorting by position */}
@@ -802,39 +671,36 @@ export default function ProjectsEdit() {
                           )}
                         </button>
                       </div>
-                      {/* Drop indicator below */}
-                      {showDropIndicator && dropPosition === "below" && (
-                        <DropIndicator position="below" />
-                      )}
-                      {/* Drop indicator after the last task */}
-                      {shouldShowDropAtEnd && (
+
+                      {/* Drop zone below the task (only for the last task) */}
+                      {index === sortedTasks.length - 1 && canDrop && (
                         <div
-                          className="h-12 bg-indigo-100 border-2 border-dashed border-indigo-400 rounded-lg mx-2 mt-2 flex items-center justify-center shadow-md"
-                          onDragOver={handleContainerDragOver}
-                          onDragLeave={handleContainerDragLeave}
-                          onDrop={(e) => handleDropAfterTask(e, task.uniqueId)}
+                          className={`h-8 transition-all duration-200 ${
+                            isDragOver && dropPosition === "below"
+                              ? "bg-indigo-100 border-2 border-dashed border-indigo-400 rounded-lg flex items-center justify-center"
+                              : "hover:bg-gray-50 rounded-lg"
+                          }`}
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (canDrop) {
+                              setDragOverTaskId(task.uniqueId);
+                              setDropPosition("below");
+                            }
+                          }}
+                          onDragLeave={handleDragLeave}
+                          onDrop={(e) => handleDrop(e, task.uniqueId)}
                         >
-                          <div className="text-indigo-600 text-sm font-medium">
-                            Drop here to move to end
-                          </div>
+                          {isDragOver && dropPosition === "below" && (
+                            <div className="text-indigo-600 text-sm font-medium">
+                              Drop here to move below
+                            </div>
+                          )}
                         </div>
                       )}
                     </React.Fragment>
                   );
                 })}
-                {/* Drop indicator at the end */}
-                {showDropAtEnd && (
-                  <div
-                    className="h-12 bg-indigo-100 border-2 border-dashed border-indigo-400 rounded-lg mx-2 mt-2 flex items-center justify-center shadow-md"
-                    onDragOver={handleContainerDragOver}
-                    onDragLeave={handleContainerDragLeave}
-                    onDrop={handleDropAtEnd}
-                  >
-                    <div className="text-indigo-600 text-sm font-medium">
-                      Drop here to move to end
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>

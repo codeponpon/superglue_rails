@@ -1,0 +1,2 @@
+json.array!(@projects, partial: ['projects/project', fragment: ->(project){"project_#{project.id}"}]) do |project|
+end

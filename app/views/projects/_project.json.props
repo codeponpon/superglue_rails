@@ -1,0 +1,6 @@
+json.id project.id
+json.name project.name
+json.description project.description
+json.url project_path(project)
+json.edit_path edit_project_path(project)
+json.delete_path project_path(project)
