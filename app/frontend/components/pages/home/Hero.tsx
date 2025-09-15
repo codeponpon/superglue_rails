@@ -26,7 +26,13 @@ export default function Hero() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
-              <button className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-xl text-base transition-all duration-400 shadow-lg hover:shadow-xl">
+              <button
+                className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-xl text-base transition-all duration-400 shadow-lg hover:shadow-xl"
+                data-sg-visit
+                onClick={() => {
+                  window.location.href = "/users/new";
+                }}
+              >
                 Create an account
               </button>
               <button className="bg-white/80 backdrop-blur-sm hover:bg-white text-slate-700 font-semibold py-3 px-6 rounded-xl text-base transition-all duration-300 border border-slate-200 hover:border-slate-300 hover:shadow-md">

@@ -1,0 +1,11 @@
+json.signup_form do
+  form_props(model: @user, url: users_path) do |f|
+    f.text_field :email_address
+    f.password_field :password
+    f.password_field :password_confirmation
+    f.submit
+  end
+  json.errors @user.errors.to_hash(true)
+end
+
+json.login_path new_session_path
