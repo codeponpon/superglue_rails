@@ -60,7 +60,7 @@ end
 
 gem "vite_rails", "~> 3.0"
 
-gem "superglue", "2.0.0.alpha.8"
+gem "superglue", "2.0.0.alpha.9"
 
 gem "pagy", "~> 9.4"
 
